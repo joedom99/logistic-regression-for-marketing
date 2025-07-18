@@ -7,7 +7,7 @@
 
 Created by [Joe Domaleski](https://blog.marketingdatascience.ai), July 2025.
 
-This project demonstrates how to use logistic regression in a marketing context to predict website conversions based on traffic source. It uses synthetic data and includes complete R code and visualizations to help marketers understand and explain model results.
+This project demonstrates how to use logistic regression in a marketing context to predict website conversions based on the web traffic source. It uses synthetic data and includes complete R code and visualizations to help marketers understand and explain model results.
 
 ## 🧠 What This Project Covers
 - Building and interpreting a logistic regression model
