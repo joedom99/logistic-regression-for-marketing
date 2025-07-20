@@ -14,7 +14,8 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(caret)
-library(ggpubr)
+library(tibble)
+
 
 # ==== Step 1: Load Data ====
 data <- read.csv("simulated_sessions_with_timestamp.csv", stringsAsFactors = TRUE)
@@ -41,6 +42,23 @@ test_data  <- data[-train_index, c("source", "converted")]
 model <- glm(converted ~ source, data = train_data, family = binomial)
 summary(model)
 
+# Plot Logistic Regression Coefficients
+coef_df <- summary(model)$coefficients %>%
+  as.data.frame() %>%
+  rownames_to_column("term") %>%
+  filter(term != "(Intercept)") %>%
+  mutate(lower = Estimate - 1.96 * `Std. Error`,
+         upper = Estimate + 1.96 * `Std. Error`)
+
+ggplot(coef_df, aes(x = term, y = Estimate)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  labs(title = "Log-Odds Coefficients (vs. Ad)",
+       x = "Source (compared to Ad)",
+       y = "Log-Odds Estimate") +
+  theme_minimal()
+
 # ==== Step 6: Predict on Test Data ====
 # Predict probabilities
 pred_probs <- predict(model, newdata = test_data, type = "response")
@@ -49,13 +67,22 @@ pred_probs <- predict(model, newdata = test_data, type = "response")
 pred_class <- ifelse(pred_probs > 0.5, "1", "0")
 pred_class <- factor(pred_class, levels = levels(test_data$converted))
 
+# Density Plot of Predicted Probabilities
+ggplot(test_data, aes(x = pred_probs, fill = converted)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Predicted Probability Distributions by Actual Conversion",
+       x = "Predicted Probability",
+       y = "Density",
+       fill = "Actual Conversion") +
+  theme_minimal()
+
 # ==== Step 7: Plot of means and confidence intervals ====
 
 # Add predicted probabilities to test data (if not already added)
-test_data$predicted_prob <- predict(model, newdata = test_data, type = "response")
+test_data$pred_probs <- predict(model, newdata = test_data, type = "response")
 
 # Plot
-ggplot(test_data, aes(x = source, y = predicted_prob, fill = source)) +
+ggplot(test_data, aes(x = source, y = pred_probs, fill = source)) +
   stat_summary(fun = mean, geom = "bar", width = 0.6) +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2) +
   stat_summary(geom = "text",
